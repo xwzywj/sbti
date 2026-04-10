@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBTI - MBTI已死</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a0033, #4c1d95);
+            color: white;
+            font-family: system-ui, sans-serif;
+        }
+        .glow { text-shadow: 0 0 25px #c026d3, 0 0 50px #f97316; }
+        .card { background: rgba(42, 26, 74, 0.95); }
+        .option:hover { transform: scale(1.05); background-color: #6b21a8; }
+    </style>
+</head>
+<body class="min-h-screen py-12">
+    <div class="max-w-lg mx-auto px-4">
+        
+        <!-- 欢迎页 -->
+        <div id="welcome" class="text-center">
+            <div class="text-7xl mb-6">💀🤡🤑🐶</div>
+            <h1 class="text-5xl font-black glow mb-4">SBTI 人格测试</h1>
+            <p class="text-2xl text-pink-300 mb-8">MBTI 过时了，来测测你是个什么抽象玩意儿</p>
+            
+            <button onclick="startTest()" 
+                    class="w-full py-6 text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl hover:scale-105 transition-all shadow-2xl">
+                开始测试（超级整蛊版）
+            </button>
+            
+            <p class="mt-10 text-sm text-gray-400">⚠️ 纯属娱乐，测完别破防</p>
+        </div>
+
+        <!-- 测试页 -->
+        <div id="quiz" class="hidden card rounded-3xl p-8 shadow-2xl">
+            <div class="flex justify-between mb-6 text-sm">
+                <span id="qnum" class="font-bold">1 / 10</span>
+                <span id="prog" class="text-purple-400">10%</span>
+            </div>
+            <div class="h-2 bg-gray-800 rounded-full mb-8">
+                <div id="progress" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-1/10 transition-all"></div>
+            </div>
+            
+            <h2 id="question" class="text-2xl font-bold mb-8 min-h-[100px]"></h2>
+            
+            <div id="options" class="space-y-4"></div>
+        </div>
+
+        <!-- 结果页 -->
+        <div id="result" class="hidden card rounded-3xl p-10 text-center">
+            <div id="emoji" class="text-8xl mb-6"></div>
+            <h2 id="type" class="text-4xl font-black mb-4"></h2>
+            <p id="desc" class="text-xl text-yellow-200 mb-10"></p>
+            
+            <button onclick="restart()" 
+                    class="w-full py-5 bg-white text-black font-bold text-xl rounded-3xl hover:bg-yellow-300 transition-all">
+                再测一次（我不服！）
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {q: "闹钟响了，你第一反应？", opts: ["砸了继续睡", "骂着爬起来", "假装没听见", "立刻起床卷"]},
+            {q: "朋友借钱不还，你会？", opts: ["当没事", "当场翻脸", "阴阳怪气", "记仇下次坑回来"]},
+            {q: "领导周末让你加班？", opts: ["好的我来", "直接请假", "表面答应摆烂", "疯狂内卷"]},
+            {q: "看到前任过得很好？", opts: ["默默祝福（假）", "破防", "发朋友圈阴阳", "马上找下一个"]},
+            {q: "你最常说的话是？", opts: ["我太难了", "关我屁事", "就这？", "我不是针对谁"]},
+            {q: "聚会时你是？", opts: ["空气人", "气氛担当", "社死本体", "买单机器"]},
+            {q: "你的未来规划？", opts: ["躺平", "暴富白日梦", "润", "卷到死"]},
+            {q: "测完最想干嘛？", opts: ["发朋友圈炫耀", "骂测试太准", "再测一次", "假装没测过"]},
+            {q: "你觉得自己是？", opts: ["社畜", "吗喽", "ATM", "死者"]},
+            {q: "抽象文化里你最像？", opts: ["精神股东", "拿捏大师", "草粉", "抽象天花板"]}
+        ];
+
+        const results = [
+            {emoji:"💀", type:"死者型", desc:"你已经彻底社死了，还在假装活着。建议：继续摆烂，别醒了。"},
+            {emoji:"🤑", type:"ATM-er", desc:"你是行走的移动支付工具，人见人爱，钱包见你哭。"},
+            {emoji:"🐶", type:"吗喽型", desc:"抽象文化顶流，嘴臭心善，社牛中的战斗机。"},
+            {emoji:"🤡", type:"小丑型", desc:"自带节目效果，走到哪笑到哪，社死现场制造机。"},
+            {emoji:"😏", type:"拿捏精", desc:"情商逆天，永远精准拿捏别人，就是拿捏不住自己。"},
+            {emoji:"💩", type:"SHIT-O-H", desc:"抽象界天花板，又臭又硬，却意外受欢迎！"}
+        ];
+
+        let current = 0;
+        let answers = [];
+
+        function startTest() {
+            document.getElementById('welcome').classList.add('hidden');
+            document.getElementById('quiz').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[current];
+            document.getElementById('qnum').textContent = `${current+1} / ${questions.length}`;
+            document.getElementById('question').textContent = q.q;
+            document.getElementById('prog').textContent = `${Math.round((current+1)/questions.length*100)}%`;
+            document.getElementById('progress').style.width = `${(current+1)/questions.length*100}%`;
+
+            const optsDiv = document.getElementById('options');
+            optsDiv.innerHTML = '';
+            q.opts.forEach((opt, i) => {
+                const div = document.createElement('div');
+                div.className = 'option p-5 bg-gray-900 rounded-2xl text-lg cursor-pointer border border-purple-900 hover:border-pink-500';
+                div.textContent = opt;
+                div.onclick = () => choose(i);
+                optsDiv.appendChild(div);
+            });
+        }
+
+        function choose(index) {
+            answers[current] = index;
+            if (current < questions.length - 1) {
+                current++;
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz').classList.add('hidden');
+            document.getElementById('result').classList.remove('hidden');
+
+            const score = answers.reduce((a,b)=>a+b,0) % results.length;
+            const r = results[score];
+
+            document.getElementById('emoji').textContent = r.emoji;
+            document.getElementById('type').textContent = r.type;
+            document.getElementById('desc').textContent = r.desc;
+        }
+      Commit message
+
+        function restart() {
+            current = 0;
+            answers = [];
+            document.getElementById('result').classList.add('hidden');
+            document.getElementById('welcome').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
