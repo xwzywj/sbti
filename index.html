@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBTI - MBTI已死</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a0033, #4c1d95);
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .glow {
+            text-shadow: 0 0 20px #c026d3, 0 0 40px #f97316;
+        }
+        .option {
+            transition: all 0.3s;
+        }
+        .option:hover {
+            transform: scale(1.05) translateX(10px);
+            background-color: #6b21a8 !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-4">
+    <div class="max-w-md mx-auto">
+
+        <!-- 欢迎页面 -->
+        <div id="welcome" class="text-center">
+            <div class="text-6xl mb-6 animate-bounce">💀 🤡 🤑 🐶</div>
+            <h1 class="text-5xl font-black glow mb-4">SBTI 人格测试</h1>
+            <p class="text-2xl text-pink-300 mb-2">MBTI 已经过时了</p>
+            <p class="text-xl text-yellow-300 mb-10">来测测你到底是个什么抽象玩意儿～</p>
+            
+            <button onclick="startTest()" 
+                    class="w-full py-6 text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 rounded-3xl hover:scale-105 active:scale-95 transition-all shadow-2xl">
+                开始整蛊测试
+            </button>
+            
+            <p class="mt-12 text-sm text-gray-400">共10题 · 纯属娱乐 · 测完别破防</p>
+        </div>
+
+        <!-- 测试页面 -->
+        <div id="quiz" class="hidden bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
+            <div class="flex justify-between mb-6">
+                <span id="qnum" class="font-bold text-lg">1 / 10</span>
+                <span id="progress-text" class="text-purple-300">10%</span>
+            </div>
+            <div class="h-3 bg-white/20 rounded-full mb-8 overflow-hidden">
+                <div id="progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-300" style="width: 10%"></div>
+            </div>
+            
+            <h2 id="question" class="text-2xl font-semibold mb-10 leading-relaxed min-h-[110px]"></h2>
+            
+            <div id="options" class="space-y-4"></div>
+        </div>
+
+        <!-- 结果页面 -->
+        <div id="result" class="hidden bg-white/10 backdrop-blur-lg rounded-3xl p-10 text-center shadow-2xl">
+            <div id="emoji" class="text-8xl mb-6"></div>
+            <h2 id="type" class="text-4xl font-black mb-3"></h2>
+            <p id="desc" class="text-xl text-yellow-200 leading-relaxed mb-10"></p>
+            
+            <button onclick="restartTest()" 
+                    class="w-full py-5 bg-white text-black font-bold text-xl rounded-3xl hover:bg-yellow-300 transition-all">
+                再测一次（我不服！）
+            </button>
+            
+            <p class="text-xs text-gray-400 mt-8">快分享给朋友，看看他们是什么抽象生物 😂</p>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "闹钟响了，你第一反应是？", opts: ["直接砸了继续睡", "骂骂咧咧爬起来", "假装没听见等别人叫", "立刻起床打卡卷"] },
+            { q: "朋友借钱不还，你会？", opts: ["当没发生过", "当场翻脸拉黑", "阴阳怪气提醒", "默默记仇下次加倍坑"] },
+            { q: "领导让你周末加班？", opts: ["好的好的我马上来", "直接请假装死", "表面答应实际摆烂", "疯狂内卷争取表现"] },
+            { q: "看到前任过得很好，你？", opts: ["默默祝福（假的）", "当场破防大哭", "发朋友圈阴阳他", "立刻找下一个"] },
+            { q: "你最常说的一句话是？", opts: ["我太难了", "关我屁事", "就这？", "我不是针对谁"] },
+            { q: "聚会时你通常是？", opts: ["空气人", "气氛组组长", "社死担当", "买单机器"] },
+            { q: "你的未来规划？", opts: ["彻底躺平摆烂", "天天做暴富梦", "想办法润出去", "继续卷到死"] },
+            { q: "测完这个测试你最想？", opts: ["发朋友圈炫耀结果", "骂这个测试太准了", "再测一次", "立刻关闭假装没测"] },
+            { q: "你觉得自己最像什么？", opts: ["社畜", "吗喽", "ATM机", "死者"] },
+            { q: "在抽象文化里你属于？", opts: ["精神股东", "拿捏大师", "草粉选手", "抽象天花板"] }
+        ];
+
+        const results = [
+            { emoji: "💀", type: "死者型 (DEAD-er)", desc: "你已经彻底社死了，还在假装活着。建议：继续摆烂，世界不需要你醒来。" },
+            { emoji: "🤑", type: "ATM-er", desc: "你是行走的移动支付工具，人见人爱，花见花开（钱包见你默默流泪）。" },
+            { emoji: "🐶", type: "吗喽型", desc: "抽象文化领军人物，嘴臭但可爱，社牛中的战斗机。" },
+            { emoji: "🤡", type: "小丑型", desc: "天生自带节目效果，走到哪都是笑点和社死现场制造机。" },
+            { emoji: "😏", type: "拿捏精", desc: "情商逆天，永远精准拿捏别人，就是拿捏不住自己的人生。" },
+            { emoji: "💩", type: "SHIT-O-H 型", desc: "抽象界天花板！又臭又硬，却莫名其妙受欢迎。恭喜你封神！" }
+        ];
+
+        let currentQuestion = 0;
+        let answers = [];
+
+        function startTest() {
+            document.getElementById("welcome").classList.add("hidden");
+            document.getElementById("quiz").classList.remove("hidden");
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById("qnum").textContent = `${currentQuestion + 1} / ${questions.length}`;
+            document.getElementById("question").textContent = q.q;
+            
+            const progress = Math.round(((currentQuestion + 1) / questions.length) * 100);
+            document.getElementById("progress-bar").style.width = `${progress}%`;
+            document.getElementById("progress-text").textContent = `${progress}%`;
+
+            const container = document.getElementById("options");
+            container.innerHTML = "";
+            
+            q.opts.forEach((opt, index) => {
+                const div = document.createElement("div");
+                div.className = "option p-5 bg-white/10 rounded-2xl text-lg cursor-pointer border border-white/30 hover:border-pink-400";
+                div.textContent = opt;
+                div.onclick = () => selectAnswer(index);
+                container.appendChild(div);
+            });
+        }
+
+        function selectAnswer(index) {
+            answers[currentQuestion] = index;
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById("quiz").classList.add("hidden");
+            document.getElementById("result").classList.remove("hidden");
+
+            const score = answers.reduce((sum, val) => sum + val, 0) % results.length;
+            const res = results[score];
+
+            document.getElementById("emoji").textContent = res.emoji;
+            document.getElementById("type").textContent = res.type;
+            document.getElementById("desc").textContent = res.desc;
+        }
+
+        function restartTest() {
+            currentQuestion = 0;
+            answers = [];
+            document.getElementById("result").classList.add("hidden");
+            document.getElementById("welcome").classList.remove("hidden");
+        }
+    </script>
+</body>
+</html>
