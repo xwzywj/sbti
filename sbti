@@ -1,0 +1,306 @@
+为你制作了一个高质量的 Sbti人格测试(恶搞版) 单页网站，完全符合你的需求：手机自适应、低饱和柔和色系、31个问题、三选一、自动跳转、未选提示以及最终的数据分析图表。
+ 
+这个页面包含了趣味恶搞的人格类型，视觉上采用了柔和的卡片布局，交互流畅。
+ 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sbti人格测试(恶搞版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#7C3AED', // 主色：柔和紫
+                        secondary: '#2DD4BF', // 辅助色：薄荷绿
+                        neutral: '#F8FAFC', // 背景色：浅灰白
+                        card: '#FFFFFF',    // 卡片色
+                        text: '#334155',    // 正文色
+                        textLight: '#64748B', // 次要文字色
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .option-hover {
+                @apply transition-all duration-300 ease-in-out;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+            }
+        }
+    </style>
+</head>
+<body class="bg-neutral min-h-screen font-sans text-text">
+    <!-- 测试容器 -->
+    <div class="container mx-auto px-4 py-8 max-w-md">
+        <!-- 欢迎页面 -->
+        <div id="welcome-screen" class="flex flex-col items-center justify-center min-h-[80vh] text-center">
+            <div class="bg-card rounded-2xl p-8 card-shadow w-full">
+                <div class="flex justify-center mb-6">
+                    <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                        <i class="fa fa-question-circle text-primary text-3xl"></i>
+                    </div>
+                </div>
+                <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold mb-4 text-primary">Sbti人格测试</h1>
+                <p class="text-textLight mb-8">超准的恶搞人格测试，看看你是哪种奇葩？</p>
+                <button id="start-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-full transition-all duration-300 ease-in-out shadow-md hover:shadow-lg">
+                    开始测试
+                </button>
+                <p class="text-textLight/70 text-sm mt-6">共31题，预计需要3分钟</p>
+            </div>
+        </div>
+
+        <!-- 测试题目页面 (初始隐藏) -->
+        <div id="quiz-screen" class="hidden">
+            <!-- 进度条 -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-primary h-2.5 rounded-full transition-all duration-500 ease-in-out" style="width: 0%"></div>
+            </div>
+            
+            <!-- 题目卡片 -->
+            <div class="bg-card rounded-2xl p-6 card-shadow mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <span id="question-number" class="text-sm text-textLight font-medium">问题 1/31</span>
+                    <span class="text-sm text-primary font-medium" id="progress-text">0%</span>
+                </div>
+                
+                <h2 id="question-text" class="text-xl font-semibold mb-6">加载中...</h2>
+                
+                <div class="space-y-4" id="options-container">
+                    <!-- 选项将通过JS动态生成 -->
+                </div>
+                
+                <!-- 导航按钮 -->
+                <div class="flex justify-between mt-8">
+                    <button id="prev-btn" class="flex items-center gap-1 px-4 py-2 rounded-full border border-gray-200 text-textLight hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa fa-arrow-left"></i>
+                        <span>上一题</span>
+                    </button>
+                    <button id="next-btn" class="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <span>下一题</span>
+                        <i class="fa fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果页面 (初始隐藏) -->
+        <div id="result-screen" class="hidden">
+            <div class="bg-card rounded-2xl p-8 card-shadow text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="w-20 h-20 rounded-full bg-secondary/20 flex items-center justify-center">
+                        <i class="fa fa-trophy text-secondary text-3xl"></i>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">测试完成!</h2>
+                <p class="text-textLight mb-6">你的Sbti人格类型分析结果</p>
+                
+                <!-- 结果图表 -->
+                <div class="h-64 mb-8">
+                    <canvas id="result-chart"></canvas>
+                </div>
+                
+                <!-- 人格结果 -->
+                <div id="personality-result" class="bg-neutral rounded-xl p-6 mb-6">
+                    <h3 class="text-xl font-bold mb-2" id="personality-type">加载中...</h3>
+                    <p class="text-textLight" id="personality-desc">加载中...</p>
+                </div>
+                
+                <button id="restart-btn" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-full transition-all duration-300 ease-in-out shadow-md hover:shadow-lg">
+                    重新测试
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 测试题目数据
+        const questions = [
+            { q: "当你进入一个陌生的房间，你会?", options: ["观察周围环境", "直接找个位置坐下", "和周围的人打招呼"] },
+            { q: "朋友向你倾诉烦恼，你会?", options: ["感同身受地安慰", "分析问题给出建议", "讲个笑话转移注意力"] },
+            { q: "周末你更愿意?", options: ["宅家独处", "和朋友聚会", "参加户外活动"] },
+            { q: "面对压力，你通常会?", options: ["冷静思考解决方案", "向他人寻求帮助", "通过娱乐方式放松"] },
+            { q: "你更喜欢哪种早餐?", options: ["精致的西餐", "传统的中式早餐", "随便吃点"] },
+            { q: "当你在做决定时，你更依赖?", options: ["直觉和感觉", "逻辑和分析", "他人的意见"] },
+            { q: "你通常如何度过夜晚?", options: ["阅读或学习", "刷手机/追剧", "社交或娱乐"] },
+            { q: "你对计划的态度是?", options: ["喜欢详细规划", "有大致方向即可", "走一步看一步"] },
+            { q: "遇到陌生人，你会?", options: ["保持距离", "主动交流", "等待对方先开口"] },
+            { q: "你认为自己更像?", options: ["感性的艺术家", "理性的思考者", "热情的行动派"] },
+            { q: "当你犯错时，你会?", options: ["自责难过很久", "分析原因吸取教训", "一笑置之继续前进"] },
+            { q: "你更喜欢哪种天气?", options: ["阴雨绵绵", "阳光明媚", "大雪纷飞"] },
+            { q: "朋友邀请你参加派对，你会?", options: ["找理由拒绝", "犹豫后决定去", "欣然答应"] },
+            { q: "你解决冲突的方式是?", options: ["回避冲突", "理性沟通", "情绪化对抗"] },
+            { q: "你通常的睡眠习惯是?", options: ["规律作息", "熬夜早起", "随心所欲"] },
+            { q: "当你学习新技能时，你会?", options: ["先研究理论", "直接动手实践", "找人教你"] },
+            { q: "你更喜欢的音乐类型是?", options: ["安静舒缓", "动感节奏", "各种类型都喜欢"] },
+            { q: "你对时间的观念是?", options: ["总是提前到达", "准时到达", "经常迟到"] },
+            { q: "你处理压力的方式是?", options: ["独自消化", "找人倾诉", "通过运动释放"] },
+            { q: "你更喜欢的食物是?", options: ["精致料理", "家常便饭", "快餐小吃"] },
+            { q: "当你面对挑战时，你会?", options: ["感到焦虑", "冷静应对", "兴奋挑战"] },
+            { q: "你更擅长?", options: ["感受情绪", "分析问题", "组织行动"] },
+            { q: "你对社交的态度是?", options: ["需要独处充电", "享受社交乐趣", "无所谓"] },
+            { q: "你做事情通常?", options: ["追求完美", "注重结果", "重在过程"] },
+            { q: "你更喜欢的颜色是?", options: ["冷色调", "暖色调", "明亮色彩"] },
+            { q: "当你有了新想法，你会?", options: ["反复思考", "立即行动", "告诉别人征求意见"] },
+            { q: "你更像?", options: ["梦想家", "实干家", "社交家"] },
+            { q: "你处理物品的方式是?", options: ["保留一切", "断舍离", "随机存放"] },
+            { q: "你更喜欢的假期活动是?", options: ["安静阅读", "探索新地方", "热闹聚会"] },
+            { q: "你对未来的态度是?", options: ["充满期待", "谨慎规划", "顺其自然"] },
+            { q: "如果可以变成一种动物，你会选?", options: ["猫 - 高冷神秘", "狗 - 热情忠诚", "狐狸 - 聪明机智"] }
+        ];
+
+        // 人格类型结果
+        const personalityTypes = [
+            { type: "🎭 多情者", desc: "情感丰富，内心戏十足，是朋友圈中的情绪价值担当，总能敏锐捕捉他人的情感变化。" },
+            { type: "💀 死者", desc: "看淡一切，佛系通透，对世间万物都有一种"生人勿近"的疏离感，拥有超越年龄的成熟与沧桑。" },
+            { type: "🤡 小丑", desc: "天生乐天派，自带搞笑属性，总能用幽默化解尴尬，是大家的开心果，治愈力满分。" },
+            { type: "😐 无所谓人", desc: "主打一个"随缘"，万事皆可，万物都行，没有强烈的主见，随和到让人怀疑人生。" },
+            { type: "😏 拿捏者", desc: "智商在线，情商爆表，在人际交往中总能精准拿捏分寸，看似漫不经心，实则运筹帷幄。" },
+            { type: "💃 尤物", desc: "自信迷人，自带气场，无论走到哪里都是焦点，对自己的魅力有绝对的自信。" }
+        ];
+
+        // 全局变量
+        let currentQuestion = 0;
+        let answers = [];
+        let selectedOptionIndex = -1;
+
+        // DOM 元素
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const questionNumber = document.getElementById('question-number');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        // 开始测试
+        startBtn.addEventListener('click', () => {
+            welcomeScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            loadQuestion();
+        });
+
+        // 重新测试
+        restartBtn.addEventListener('click', () => {
+            currentQuestion = 0;
+            answers = [];
+            selectedOptionIndex = -1;
+            resultScreen.classList.add('hidden');
+            welcomeScreen.classList.remove('hidden');
+        });
+
+        // 上一题
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                selectedOptionIndex = answers[currentQuestion] !== undefined ? answers[currentQuestion] : -1;
+                loadQuestion();
+                updateNavigationButtons();
+            }
+        });
+
+        // 下一题
+        nextBtn.addEventListener('click', () => {
+            if (selectedOptionIndex === -1) {
+                showToast('请选择一个选项');
+                return;
+            }
+
+            answers[currentQuestion] = selectedOptionIndex;
+
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                selectedOptionIndex = answers[currentQuestion] !== undefined ? answers[currentQuestion] : -1;
+                loadQuestion();
+                updateNavigationButtons();
+            } else {
+                // 显示结果
+                showResult();
+            }
+        });
+
+        // 加载题目
+        function loadQuestion() {
+            const question = questions[currentQuestion];
+            
+            // 更新题目编号和进度
+            questionNumber.textContent = `问题 ${currentQuestion + 1}/${questions.length}`;
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${Math.round(progress)}%`;
+            
+            // 更新题目文本
+            questionText.textContent = question.q;
+            
+            // 清空选项容器
+            optionsContainer.innerHTML = '';
+            
+            // 添加选项
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = `option-hover p-4 rounded-lg border ${selectedOptionIndex === index ? 'border-primary bg-primary/10' : 'border-gray-200 hover:border-primary/50 hover:bg-primary/5'} cursor-pointer`;
+                optionElement.innerHTML = `
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="option" value="${index}" class="hidden" ${selectedOptionIndex === index ? 'checked' : ''}>
+                        <span class="w-6 h-6 flex items-center justify-center rounded-full ${selectedOptionIndex === index ? 'bg-primary text-white' : 'bg-gray-100 text-textLight mr-3'}">${index + 1}</span>
+                        <span>${option}</span>
+                    </label>
+                `;
+                
+                optionElement.addEventListener('click', () => {
+                    selectedOptionIndex = index;
+                    updateOptions();
+                    nextBtn.disabled = false;
+                });
+                
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+
+        // 更新选项样式
+        function updateOptions() {
+            const options = optionsContainer.querySelectorAll('.option-hover');
+            options.forEach((option, index) => {
+                if (selectedOptionIndex === index) {
+                    option.classList.add('border-primary', 'bg-primary/10');
+                    option.classList.remove('border-gray-200', 'hover:border-primary/50', 'hover:bg-primary/5');
+                } else {
+                    option.classList.remove('border-primary', 'bg-primary/10');
+                    option.classList.add('border-gray-200', 'hover:border-primary/50', 'hover:bg-primary/5');
+                }
+            });
+        }
+
+        // 更新导航按钮状态
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestion === 0;
+            nextBtn.disabled = currentQuestion === questions.length - 1;
+            
+            // 如果是最后一题，改变按钮文字
+            if (currentQuestion === questions.length - 1) {
+                nextBtn.innerHTML = '<span>查看结果</span><i class="fa fa-bar-chart"></i>';
+            } else {
+                nextBtn.innerHTML = '<span>下一题</span><i class="fa fa-arrow-right"></i>';
+            }
